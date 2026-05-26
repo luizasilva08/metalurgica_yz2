@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { Session } from '@supabase/supabase-js';
 
 interface ModalProps {
   isOpen: boolean;
@@ -32,7 +33,7 @@ function Modal({ isOpen, onClose, title, children }: ModalProps) {
   );
 }
 
-export function PedidoModal({ isOpen, onClose, onSuccess }: Omit<ModalProps, 'title' | 'children'> & { onSuccess?: () => void }) {
+export function PedidoModal({ isOpen, onClose, onSuccess, session }: Omit<ModalProps, 'title' | 'children'> & { onSuccess?: () => void, session?: Session | null }) {
   const [loading, setLoading] = useState(false);
   const [produto, setProduto] = useState('');
   const [quantidade, setQuantidade] = useState(1);
@@ -43,8 +44,20 @@ export function PedidoModal({ isOpen, onClose, onSuccess }: Omit<ModalProps, 'ti
     
     setLoading(true);
     try {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData?.user) throw new Error('Usuário não autenticado');
+      let profile_id = session?.user?.id;
+      if (!profile_id) {
+        const { data: userData } = await supabase.auth.getUser();
+        profile_id = userData?.user?.id;
+      }
+      if (!profile_id) throw new Error('Usuário não autenticado');
+
+      if (profile_id.startsWith('temp-')) {
+        await new Promise(r => setTimeout(r, 600));
+        alert('Modo de demonstração: Pedido salvo localmente (sem banco de dados).');
+        onSuccess?.();
+        onClose();
+        return;
+      }
 
       const { error } = await supabase.from('pedidos').insert([
         {
@@ -122,7 +135,7 @@ export function PedidoModal({ isOpen, onClose, onSuccess }: Omit<ModalProps, 'ti
   );
 }
 
-export function ChamadoModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onClose: () => void; onSuccess?: () => void }) {
+export function ChamadoModal({ isOpen, onClose, onSuccess, session }: { isOpen: boolean; onClose: () => void; onSuccess?: () => void, session?: Session | null }) {
   const [loading, setLoading] = useState(false);
   const [titulo, setTitulo] = useState('');
   const [descricao, setDescricao] = useState('');
@@ -134,8 +147,20 @@ export function ChamadoModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; 
     
     setLoading(true);
     try {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData?.user) throw new Error('Usuário não autenticado');
+      let profile_id = session?.user?.id;
+      if (!profile_id) {
+        const { data: userData } = await supabase.auth.getUser();
+        profile_id = userData?.user?.id;
+      }
+      if (!profile_id) throw new Error('Usuário não autenticado');
+
+      if (profile_id.startsWith('temp-')) {
+        await new Promise(r => setTimeout(r, 600));
+        alert('Modo de demonstração: Chamado salvo localmente (sem banco de dados).');
+        onSuccess?.();
+        onClose();
+        return;
+      }
 
       const { error } = await supabase.from('chamados').insert([
         {
@@ -226,7 +251,7 @@ export function ChamadoModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; 
   );
 }
 
-export function EPIModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onClose: () => void; onSuccess?: () => void }) {
+export function EPIModal({ isOpen, onClose, onSuccess, session }: { isOpen: boolean; onClose: () => void; onSuccess?: () => void, session?: Session | null }) {
   const [loading, setLoading] = useState(false);
   const [equipamento, setEquipamento] = useState('Botina de Segurança');
   const [tamanho, setTamanho] = useState('');
@@ -237,8 +262,20 @@ export function EPIModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onCl
     
     setLoading(true);
     try {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData?.user) throw new Error('Usuário não autenticado');
+      let profile_id = session?.user?.id;
+      if (!profile_id) {
+        const { data: userData } = await supabase.auth.getUser();
+        profile_id = userData?.user?.id;
+      }
+      if (!profile_id) throw new Error('Usuário não autenticado');
+
+      if (profile_id.startsWith('temp-')) {
+        await new Promise(r => setTimeout(r, 600));
+        alert('Modo de demonstração: Solicitação salva localmente (sem banco de dados).');
+        onSuccess?.();
+        onClose();
+        return;
+      }
 
       const { error } = await supabase.from('epis').insert([
         {
@@ -318,7 +355,7 @@ export function EPIModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onCl
   );
 }
 
-export function DenunciaModal({ isOpen, onClose, onSuccess }: { isOpen: boolean; onClose: () => void; onSuccess?: () => void }) {
+export function DenunciaModal({ isOpen, onClose, onSuccess, session }: { isOpen: boolean; onClose: () => void; onSuccess?: () => void, session?: Session | null }) {
   const [loading, setLoading] = useState(false);
   const [titulo, setTitulo] = useState('');
   const [categoria, setCategoria] = useState('Conduta inadequada');
@@ -330,8 +367,23 @@ export function DenunciaModal({ isOpen, onClose, onSuccess }: { isOpen: boolean;
     
     setLoading(true);
     try {
-      const { data: userData } = await supabase.auth.getUser();
-      const autor_id = (!anonima && userData?.user) ? userData.user.id : null;
+      let profile_id = session?.user?.id;
+      if (!profile_id) {
+        const { data: userData } = await supabase.auth.getUser();
+        profile_id = userData?.user?.id;
+      }
+      
+      if (!profile_id) throw new Error('Usuário não autenticado');
+
+      if (profile_id.startsWith('temp-')) {
+        await new Promise(r => setTimeout(r, 600));
+        alert('Modo de demonstração: Denúncia salva localmente (sem banco de dados).');
+        onSuccess?.();
+        onClose();
+        return;
+      }
+
+      const autor_id = (!anonima) ? profile_id : null;
 
       const { error } = await supabase.from('denuncias').insert([
         {

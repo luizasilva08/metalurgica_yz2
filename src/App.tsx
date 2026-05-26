@@ -133,14 +133,14 @@ export default function App() {
       case 'dashboard': return isChefia ? <ChefiaDashboard session={activeSessionData} setActiveTab={setActiveTab} /> : <Dashboard session={activeSessionData} setActiveTab={setActiveTab} />;
       case 'comunicados': return <Comunicados />;
       case 'rh': return <MeuRH />;
-      case 'pedidos': return <Pedidos />;
-      case 'suporte': return <Suporte />;
+      case 'pedidos': return <Pedidos session={activeSessionData} />;
+      case 'suporte': return <Suporte session={activeSessionData} />;
       case 'maquinas': return <Maquinas />;
       case 'mapa': return <Mapa />;
       case 'treinamentos': return <Treinamentos />;
-      case 'epi': return <EPI />;
+      case 'epi': return <EPI session={activeSessionData} />;
       case 'documentos': return <Documentos />;
-      case 'denuncias': return <Denuncias />;
+      case 'denuncias': return <Denuncias session={activeSessionData} />;
       case 'sobre': return <Sobre />;
       case 'perfil': return <Perfil session={activeSessionData} />;
       default: return isChefia ? <ChefiaDashboard session={activeSessionData} setActiveTab={setActiveTab} /> : <Dashboard session={activeSessionData} setActiveTab={setActiveTab} />;

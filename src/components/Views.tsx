@@ -68,7 +68,7 @@ export function Dashboard({ session, setActiveTab }: { session?: Session, setAct
   );
 }
 
-export function Pedidos() {
+export function Pedidos({ session }: { session?: Session }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [pedidos, setPedidos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -138,12 +138,12 @@ export function Pedidos() {
           ))}
         </div>
       )}
-      <PedidoModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onSuccess={fetchPedidos} />
+      <PedidoModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onSuccess={fetchPedidos} session={session} />
     </div>
   );
 }
 
-export function Suporte() {
+export function Suporte({ session }: { session?: Session }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [chamados, setChamados] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -212,7 +212,7 @@ export function Suporte() {
           ))}
         </div>
       )}
-      <ChamadoModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onSuccess={fetchChamados} />
+      <ChamadoModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onSuccess={fetchChamados} session={session} />
     </div>
   );
 }
@@ -312,7 +312,7 @@ export function Maquinas() {
   );
 }
 
-export function EPI() {
+export function EPI({ session }: { session?: Session }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [epis, setEpis] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -382,7 +382,7 @@ export function EPI() {
           ))}
         </div>
       )}
-      <EPIModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onSuccess={fetchEpis} />
+      <EPIModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onSuccess={fetchEpis} session={session} />
     </div>
   );
 }
@@ -437,7 +437,7 @@ export function Documentos() {
   );
 }
 
-export function Denuncias() {
+export function Denuncias({ session }: { session?: Session }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [denuncias, setDenuncias] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -507,7 +507,7 @@ export function Denuncias() {
           ))}
         </div>
       )}
-      <DenunciaModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onSuccess={fetchDenuncias} />
+      <DenunciaModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onSuccess={fetchDenuncias} session={session} />
     </div>
   );
 }

@@ -58,7 +58,12 @@ export function Login({ onLoginSuccess, defaultState = 'login', onBack, onTempLo
             data: { full_name: name }
           }
         }), 15000);
-        if (signUpError) throw signUpError;
+        if (signUpError) {
+          if (signUpError.message && signUpError.message.toLowerCase().includes('rate limit')) {
+            throw new Error('Limite de envios de e-mail excedido no Supabase. Dica: Para desenvolvimento, desative "Confirm email" nas configs do Supabase em Authentication > Providers > Email.');
+          }
+          throw signUpError;
+        }
         setSuccessMsg('Conta criada com sucesso! Você já pode fazer o login.');
         setAuthState('login');
         setPassword('');
