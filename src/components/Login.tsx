@@ -51,28 +51,41 @@ export function Login({ onLoginSuccess, defaultState = 'login', onBack, onTempLo
       };
 
       if (authState === 'register') {
-        const { error: signUpError } = await withTimeout(supabase.auth.signUp({
-          email: emailToUse,
-          password,
-          options: {
-            data: { full_name: name }
-          }
-        }), 15000);
-        if (signUpError) {
-          if (signUpError.message && signUpError.message.toLowerCase().includes('rate limit')) {
-            throw new Error('Limite de envios de e-mail excedido no Supabase. Dica: Para desenvolvimento, desative "Confirm email" nas configs do Supabase em Authentication > Providers > Email.');
-          }
-          throw signUpError;
+        const response = await fetch('/api/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: emailToUse, password, name })
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+           throw new Error(data.error || 'Erro ao comunicar com o servidor e criar usuário.');
         }
+
         setSuccessMsg('Conta criada com sucesso! Você já pode fazer o login.');
         setAuthState('login');
         setPassword('');
       } else if (authState === 'login') {
-        const { error: signInError } = await withTimeout(supabase.auth.signInWithPassword({
+        const { data: signInData, error: signInError } = await withTimeout(supabase.auth.signInWithPassword({
           email: emailToUse,
           password,
         }), 15000);
         if (signInError) throw signInError;
+        
+        // Log the login event
+        try {
+           if (signInData?.user?.id) {
+             await supabase.from('logs').insert({ 
+               profile_id: signInData.user.id,
+               acao: 'Login realizado', 
+               detalhes: `Login com ${emailToUse}`
+             });
+           }
+        } catch (e) {
+           console.error('Failed to log login event:', e);
+        }
+        
         onLoginSuccess();
       } else if (authState === 'recover') {
         const { error: resetError } = await withTimeout(supabase.auth.resetPasswordForEmail(identifier), 15000);

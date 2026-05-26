@@ -1,10 +1,55 @@
 import React, { useState, useEffect } from 'react';
-import { Package, LifeBuoy, HardHat, Activity, FileText, ShieldAlert, Download, Plus } from 'lucide-react';
-import { PedidoModal, ChamadoModal, EPIModal, DenunciaModal } from './Modals';
+import { Package, LifeBuoy, HardHat, Activity, FileText, ShieldAlert, Download, Plus, Nfc, Check } from 'lucide-react';
+import { PedidoModal, ChamadoModal, EPIModal, DenunciaModal, RFIDModal } from './Modals';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 
 export function Dashboard({ session, setActiveTab }: { session?: Session, setActiveTab?: (tab: any) => void }) {
+  const [stats, setStats] = useState({
+    pedidos: 0,
+    chamados: 0,
+    epis: 0,
+    maquinas: 1, // mock, as seen in Maquinas component
+  });
+
+  useEffect(() => {
+    async function fetchStats() {
+      if (!session?.user?.id) return;
+      const pid = session.user.id;
+
+      try {
+        // Fetch Pedidos
+        const resPedidos = await fetch(`/api/pedidos?isChefia=false&userId=${pid}`);
+        const dataPedidos = await resPedidos.json();
+        const countPedidos = dataPedidos.success && dataPedidos.data ? dataPedidos.data.length : 0;
+
+        // Fetch Chamados (apenas os abertos/pendentes do usuario, ou todos?)
+        const resChamados = await fetch(`/api/chamados?isChefia=false&userId=${pid}`);
+        const dataChamados = await resChamados.json();
+        const countChamados = dataChamados.success && dataChamados.data 
+          ? dataChamados.data.filter((c: any) => c.status !== 'Concluído' && c.status !== 'Fechado').length 
+          : 0;
+
+        // Fetch EPIs (pedentes)
+        const { data: episData } = await supabase
+          .from('epis')
+          .select('id, status')
+          .eq('profile_id', pid);
+        const countEpis = episData ? episData.filter(e => e.status !== 'Aprovado').length : 0;
+
+        setStats({
+          pedidos: countPedidos,
+          chamados: countChamados,
+          epis: countEpis,
+          maquinas: 1, // Fixado 1 porque há 1 "Solda MIG" em manutenção nos dados mockados
+        });
+      } catch (e) {
+        console.error('Error fetching dashboard stats:', e);
+      }
+    }
+    fetchStats();
+  }, [session]);
+
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-in fade-in duration-500">
       <div>
@@ -14,10 +59,10 @@ export function Dashboard({ session, setActiveTab }: { session?: Session, setAct
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { icon: Package, value: '0', label: 'Pedidos', color: 'text-blue-500', bg: 'bg-blue-50', tab: 'pedidos' },
-          { icon: LifeBuoy, value: '0', label: 'Chamados abertos', color: 'text-sky-500', bg: 'bg-sky-50', tab: 'suporte' },
-          { icon: HardHat, value: '0', label: 'EPI pendentes', color: 'text-amber-500', bg: 'bg-amber-50', tab: 'epi' },
-          { icon: Activity, value: '0', label: 'Máquinas em atenção', color: 'text-red-500', bg: 'bg-red-50', tab: 'maquinas' },
+          { icon: Package, value: stats.pedidos.toString(), label: 'Meus pedidos', color: 'text-blue-500', bg: 'bg-blue-50', tab: 'pedidos' },
+          { icon: LifeBuoy, value: stats.chamados.toString(), label: 'Chamados em aberto', color: 'text-sky-500', bg: 'bg-sky-50', tab: 'suporte' },
+          { icon: HardHat, value: stats.epis.toString(), label: 'EPIs pendentes', color: 'text-amber-500', bg: 'bg-amber-50', tab: 'epi' },
+          { icon: Activity, value: stats.maquinas.toString(), label: 'Máquinas em atenção', color: 'text-red-500', bg: 'bg-red-50', tab: 'maquinas' },
         ].map((stat, i) => (
           <div 
             key={i} 
@@ -68,22 +113,25 @@ export function Dashboard({ session, setActiveTab }: { session?: Session, setAct
   );
 }
 
-export function Pedidos({ session }: { session?: Session }) {
+export function Pedidos({ session, isChefia }: { session?: Session; isChefia?: boolean }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [pedidos, setPedidos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchPedidos = async () => {
     try {
-      const { data, error } = await supabase
-        .from('pedidos')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setPedidos(data || []);
+      const response = await fetch(`/api/pedidos?isChefia=${isChefia}&userId=${session?.user?.id || ''}`);
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        setPedidos(result.data);
+      } else {
+        console.error('Failed to fetch pedidos from API:', result.error);
+        setPedidos([]);
+      }
     } catch (error) {
       console.error('Error fetching pedidos:', error);
+      setPedidos([]);
     } finally {
       setLoading(false);
     }
@@ -122,7 +170,14 @@ export function Pedidos({ session }: { session?: Session }) {
           {pedidos.map(p => (
             <div key={p.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
               <div>
-                <h3 className="font-semibold text-slate-900">{p.produto} <span className="text-sm text-slate-500 ml-2 font-normal">x{p.quantidade}</span></h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-slate-900">{p.produto} <span className="text-sm text-slate-500 ml-2 font-normal">x{p.quantidade}</span></h3>
+                  {isChefia && p.profiles && (
+                    <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium border border-slate-200">
+                      Por: {p.profiles.nome}
+                    </span>
+                  )}
+                </div>
                 <p className="text-sm text-slate-500">{new Date(p.data_pedido || p.created_at).toLocaleDateString()} • Total: R$ {p.total}</p>
               </div>
               <div>
@@ -143,22 +198,25 @@ export function Pedidos({ session }: { session?: Session }) {
   );
 }
 
-export function Suporte({ session }: { session?: Session }) {
+export function Suporte({ session, isChefia }: { session?: Session; isChefia?: boolean }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [chamados, setChamados] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchChamados = async () => {
     try {
-      const { data, error } = await supabase
-        .from('chamados')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setChamados(data || []);
+      const response = await fetch(`/api/chamados?isChefia=${isChefia}&userId=${session?.user?.id || ''}`);
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        setChamados(result.data);
+      } else {
+        console.error('Failed to fetch chamados from API:', result.error);
+        setChamados([]);
+      }
     } catch (error) {
       console.error('Error fetching chamados:', error);
+      setChamados([]);
     } finally {
       setLoading(false);
     }
@@ -195,18 +253,28 @@ export function Suporte({ session }: { session?: Session }) {
       ) : (
         <div className="bg-white border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100">
           {chamados.map(c => (
-            <div key={c.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-              <div>
-                <h3 className="font-semibold text-slate-900">{c.titulo}</h3>
-                <p className="text-sm text-slate-500">{new Date(c.created_at).toLocaleDateString()} • {c.equipamento || 'Sem equipamento vinculado'}</p>
-              </div>
-              <div>
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold
-                  ${c.status === 'Aberto' ? 'bg-amber-100 text-amber-700' : 
+            <div key={c.id} className="p-4 flex flex-col gap-3 hover:bg-slate-50 transition-colors">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-slate-900">{c.titulo}</h3>
+                    {isChefia && c.profiles && (
+                      <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium border border-slate-200">
+                        Por: {c.profiles.nome}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-sm text-slate-500 mt-1">{new Date(c.created_at).toLocaleDateString()} • {c.prioridade} • {c.equipamento || 'Sem equipamento'}</p>
+                </div>
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold shrink-0 mt-1
+                  ${c.status === 'Aberto' || c.status === 'Pendente' ? 'bg-amber-100 text-amber-700' : 
                     c.status === 'Em andamento' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'}
                 `}>
-                  {c.status}
+                  {c.status || 'Pendente'}
                 </span>
+              </div>
+              <div className="bg-slate-50 border border-slate-100 rounded-lg p-4 mt-2">
+                <p className="text-sm text-slate-600 whitespace-pre-wrap">{c.descricao}</p>
               </div>
             </div>
           ))}
@@ -312,17 +380,23 @@ export function Maquinas() {
   );
 }
 
-export function EPI({ session }: { session?: Session }) {
+export function EPI({ session, isChefia }: { session?: Session; isChefia?: boolean }) {
   const [modalOpen, setModalOpen] = useState(false);
+  const [rfidModal, setRfidModal] = useState({ open: false, epiId: '' });
   const [epis, setEpis] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchEpis = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('epis')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*');
+        
+      if (!isChefia && session?.user?.id) {
+        query = query.eq('profile_id', session.user.id);
+      }
+      
+      const { data, error } = await query.order('created_at', { ascending: false });
 
       if (error) throw error;
       setEpis(data || []);
@@ -336,6 +410,13 @@ export function EPI({ session }: { session?: Session }) {
   useEffect(() => {
     fetchEpis();
   }, []);
+
+  const handleAprovar = async (id: string) => {
+    try {
+      await fetch(`/api/epis/${id}/aprovar`, { method: 'PUT' });
+      fetchEpis();
+    } catch(e) { console.error(e); }
+  };
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
@@ -364,25 +445,49 @@ export function EPI({ session }: { session?: Session }) {
       ) : (
         <div className="bg-white border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100">
           {epis.map(e => (
-            <div key={e.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
+            <div key={e.id} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50 transition-colors">
               <div>
                 <h3 className="font-semibold text-slate-900">{e.equipamento}</h3>
-                <p className="text-sm text-slate-500">{new Date(e.created_at).toLocaleDateString()} • Tamanho: {e.tamanho || 'Não especificado'}</p>
+                <p className="text-sm text-slate-500">{new Date(e.created_at).toLocaleDateString()} • Tamanho: {e.tamanho || 'D.U.'}</p>
+                {isChefia && e.profiles && (
+                  <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium border border-slate-200 mt-1 inline-block">
+                    Por: {e.profiles.nome}
+                  </span>
+                )}
               </div>
-              <div>
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold
+              <div className="flex flex-col md:items-end gap-2 shrink-0">
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold w-fit
                   ${e.status === 'Pendente' ? 'bg-amber-100 text-amber-700' : 
                     e.status === 'Aprovado' ? 'bg-emerald-100 text-emerald-700' : 
-                    e.status === 'Entregue' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'}
+                    e.status === 'Entregue' ? 'bg-slate-100 text-slate-700' : 'bg-red-100 text-red-700'}
                 `}>
-                  {e.status}
+                  {e.status === 'Aprovado' ? 'Pronta p/ Retirada' : e.status}
                 </span>
+
+                {!isChefia && e.status === 'Aprovado' && (
+                  <button 
+                    onClick={() => setRfidModal({ open: true, epiId: e.id })}
+                    className="flex items-center gap-1.5 text-xs bg-[#0a1220] hover:bg-[#15233b] text-white px-3 py-1.5 rounded transition-colors shadow-sm"
+                  >
+                    <Nfc size={14} /> Passar Crachá (Retirar)
+                  </button>
+                )}
+
+                {isChefia && e.status === 'Pendente' && (
+                  <button 
+                    onClick={() => handleAprovar(e.id)}
+                    className="flex items-center gap-1 text-xs border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 px-3 py-1.5 rounded transition-colors"
+                  >
+                    <Check size={14} /> Aprovar entrega
+                  </button>
+                )}
               </div>
             </div>
           ))}
         </div>
       )}
       <EPIModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onSuccess={fetchEpis} session={session} />
+      <RFIDModal isOpen={rfidModal.open} epiId={rfidModal.epiId} onClose={() => setRfidModal({ open: false, epiId: '' })} onSuccess={fetchEpis} />
     </div>
   );
 }
@@ -437,22 +542,25 @@ export function Documentos() {
   );
 }
 
-export function Denuncias({ session }: { session?: Session }) {
+export function Denuncias({ session, isChefia }: { session?: Session; isChefia?: boolean }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [denuncias, setDenuncias] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchDenuncias = async () => {
     try {
-      const { data, error } = await supabase
-        .from('denuncias')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setDenuncias(data || []);
+      const response = await fetch(`/api/denuncias?isChefia=${isChefia}&userId=${session?.user?.id || ''}`);
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        setDenuncias(result.data);
+      } else {
+        console.error('Failed to fetch denuncias from API:', result.error);
+        setDenuncias([]);
+      }
     } catch (error) {
       console.error('Error fetching denuncias:', error);
+      setDenuncias([]);
     } finally {
       setLoading(false);
     }
@@ -490,19 +598,51 @@ export function Denuncias({ session }: { session?: Session }) {
       ) : (
         <div className="bg-white border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100">
           {denuncias.map(d => (
-             <div key={d.id} className="p-4 flex items-center justify-between hover:bg-slate-50 transition-colors">
-               <div>
-                 <h3 className="font-semibold text-slate-900">{d.titulo}</h3>
-                 <p className="text-sm text-slate-500">{new Date(d.created_at).toLocaleDateString()} • {d.categoria}</p>
-               </div>
-               <div>
-                 <span className={`px-3 py-1 rounded-full text-xs font-semibold
-                   ${d.status === 'Em análise' ? 'bg-amber-100 text-amber-700' : 
-                     d.status === 'Em investigação' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'}
-                 `}>
-                   {d.status}
-                 </span>
-               </div>
+             <div key={d.id} className={isChefia ? "p-5 flex flex-col gap-3 hover:bg-slate-50/50 transition-colors" : "p-4 flex items-center justify-between hover:bg-slate-50 transition-colors"}>
+               {isChefia ? (
+                 <>
+                   <div className="flex items-start justify-between">
+                     <div>
+                       <div className="flex items-center gap-2">
+                         <h3 className="font-semibold text-slate-900">{d.titulo}</h3>
+                         {!d.anonima && d.profiles && (
+                           <span className="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium border border-slate-200">
+                             Por: {d.profiles.nome}
+                           </span>
+                         )}
+                       </div>
+                       <p className="text-sm text-slate-500 mt-1">{new Date(d.created_at).toLocaleString()} • <span className="font-medium">{d.categoria}</span> {d.anonima ? '• Anônima' : ''}</p>
+                     </div>
+                     <span className={`px-3 py-1 rounded-full text-xs font-semibold shrink-0 mt-1
+                       ${d.status === 'Em análise' ? 'bg-amber-100 text-amber-700' : 
+                         d.status === 'Em investigação' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'}
+                     `}>
+                       {d.status || 'Pendente'}
+                     </span>
+                   </div>
+                   <div className="bg-slate-50 border border-slate-100 rounded-lg p-4 mt-1">
+                     <p className="text-sm text-slate-600 whitespace-pre-wrap">{d.descricao}</p>
+                   </div>
+                 </>
+               ) : (
+                 <div className="w-full">
+                   <div className="flex items-start justify-between">
+                     <div>
+                       <h3 className="font-semibold text-slate-900">{d.titulo}</h3>
+                       <p className="text-sm text-slate-500 mt-1">{new Date(d.created_at).toLocaleString()} • <span className="font-medium">{d.categoria}</span> {d.anonima ? '• Anônima' : ''}</p>
+                     </div>
+                     <span className={`px-3 py-1 rounded-full text-xs font-semibold shrink-0 mt-1
+                       ${d.status === 'Em análise' || d.status === 'Em Análise' ? 'bg-amber-100 text-amber-700' : 
+                         d.status === 'Em investigação' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'}
+                     `}>
+                       {d.status || 'Pendente'}
+                     </span>
+                   </div>
+                   <div className="bg-slate-50 border border-slate-100 rounded-lg p-4 mt-3">
+                     <p className="text-sm text-slate-600 whitespace-pre-wrap">{d.descricao}</p>
+                   </div>
+                 </div>
+               )}
              </div>
           ))}
         </div>

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Loader2, ScanLine } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Session } from '@supabase/supabase-js';
 
@@ -38,9 +38,14 @@ export function PedidoModal({ isOpen, onClose, onSuccess, session }: Omit<ModalP
   const [produto, setProduto] = useState('');
   const [quantidade, setQuantidade] = useState(1);
   const [total, setTotal] = useState(0);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const handleSubmit = async () => {
-    if (!produto || quantidade <= 0) return alert('Preencha os campos obrigatórios corretamente.');
+    setErrorMsg('');
+    if (!produto || quantidade <= 0) {
+      setErrorMsg('Preencha os campos obrigatórios corretamente.');
+      return;
+    }
     
     setLoading(true);
     try {
@@ -51,17 +56,21 @@ export function PedidoModal({ isOpen, onClose, onSuccess, session }: Omit<ModalP
       }
       if (!profile_id) throw new Error('Usuário não autenticado');
 
-      if (profile_id.startsWith('temp-')) {
-        await new Promise(r => setTimeout(r, 600));
-        alert('Modo de demonstração: Pedido salvo localmente (sem banco de dados).');
-        onSuccess?.();
-        onClose();
+      if (profile_id.startsWith('00000000')) {
+        setTimeout(() => {
+          setProduto('');
+          setQuantidade(1);
+          setTotal(0);
+          if (onSuccess) onSuccess();
+          onClose();
+          alert('Modo demonstração: Pedido registrado localmente.');
+        }, 600);
         return;
       }
 
       const { error } = await supabase.from('pedidos').insert([
         {
-          profile_id: userData.user.id,
+          profile_id: profile_id,
           produto,
           quantidade,
           total,
@@ -79,7 +88,7 @@ export function PedidoModal({ isOpen, onClose, onSuccess, session }: Omit<ModalP
       onClose();
     } catch (error: any) {
       console.error('Erro ao salvar pedido:', error);
-      alert(`Erro: ${error.message || 'Falha ao criar o pedido.'}`);
+      setErrorMsg(`Erro: ${error.message || 'Falha ao criar o pedido.'}`);
     } finally {
       setLoading(false);
     }
@@ -88,6 +97,11 @@ export function PedidoModal({ isOpen, onClose, onSuccess, session }: Omit<ModalP
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Novo pedido">
       <div className="space-y-4">
+        {errorMsg && (
+          <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg border border-red-100">
+            {errorMsg}
+          </div>
+        )}
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Produto</label>
           <input 
@@ -141,9 +155,14 @@ export function ChamadoModal({ isOpen, onClose, onSuccess, session }: { isOpen: 
   const [descricao, setDescricao] = useState('');
   const [prioridade, setPrioridade] = useState('Média');
   const [equipamento, setEquipamento] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
 
   const handleSubmit = async () => {
-    if (!titulo || !descricao) return alert('Preencha os campos obrigatórios (assunto e descrição).');
+    setErrorMsg('');
+    if (!titulo || !descricao) {
+      setErrorMsg('Preencha os campos obrigatórios (assunto e descrição).');
+      return;
+    }
     
     setLoading(true);
     try {
@@ -154,17 +173,22 @@ export function ChamadoModal({ isOpen, onClose, onSuccess, session }: { isOpen: 
       }
       if (!profile_id) throw new Error('Usuário não autenticado');
 
-      if (profile_id.startsWith('temp-')) {
-        await new Promise(r => setTimeout(r, 600));
-        alert('Modo de demonstração: Chamado salvo localmente (sem banco de dados).');
-        onSuccess?.();
-        onClose();
+      if (profile_id.startsWith('00000000')) {
+        setTimeout(() => {
+          setTitulo('');
+          setDescricao('');
+          setEquipamento('');
+          setPrioridade('Média');
+          onSuccess?.();
+          onClose();
+          alert('Modo demonstração: Chamado registrado localmente.');
+        }, 600);
         return;
       }
 
       const { error } = await supabase.from('chamados').insert([
         {
-          profile_id: userData.user.id,
+          profile_id: profile_id,
           titulo,
           descricao,
           prioridade,
@@ -182,7 +206,7 @@ export function ChamadoModal({ isOpen, onClose, onSuccess, session }: { isOpen: 
       onClose();
     } catch (e: any) {
       console.error(e);
-      alert(`Erro ao abrir chamado: ${e.message || 'Verifique o console para mais detalhes.'}`);
+      setErrorMsg(`Erro ao abrir chamado: ${e.message || 'Verifique o console para mais detalhes.'}`);
     } finally {
       setLoading(false);
     }
@@ -191,6 +215,11 @@ export function ChamadoModal({ isOpen, onClose, onSuccess, session }: { isOpen: 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Abrir chamado">
       <div className="space-y-4">
+        {errorMsg && (
+          <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg border border-red-100">
+            {errorMsg}
+          </div>
+        )}
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Assunto *</label>
           <input 
@@ -256,9 +285,14 @@ export function EPIModal({ isOpen, onClose, onSuccess, session }: { isOpen: bool
   const [equipamento, setEquipamento] = useState('Botina de Segurança');
   const [tamanho, setTamanho] = useState('');
   const [motivo, setMotivo] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
 
   const handleSubmit = async () => {
-    if (!equipamento || !motivo) return alert('Preencha os campos obrigatórios.');
+    setErrorMsg('');
+    if (!equipamento || !motivo) {
+      setErrorMsg('Preencha os campos obrigatórios.');
+      return;
+    }
     
     setLoading(true);
     try {
@@ -269,17 +303,21 @@ export function EPIModal({ isOpen, onClose, onSuccess, session }: { isOpen: bool
       }
       if (!profile_id) throw new Error('Usuário não autenticado');
 
-      if (profile_id.startsWith('temp-')) {
-        await new Promise(r => setTimeout(r, 600));
-        alert('Modo de demonstração: Solicitação salva localmente (sem banco de dados).');
-        onSuccess?.();
-        onClose();
+      if (profile_id.startsWith('00000000')) {
+        setTimeout(() => {
+          setEquipamento('Botina de Segurança');
+          setTamanho('');
+          setMotivo('');
+          onSuccess?.();
+          onClose();
+          alert('Modo demonstração: EPI solicitado localmente.');
+        }, 600);
         return;
       }
 
       const { error } = await supabase.from('epis').insert([
         {
-          profile_id: userData.user.id,
+          profile_id: profile_id,
           equipamento,
           tamanho,
           motivo,
@@ -295,7 +333,7 @@ export function EPIModal({ isOpen, onClose, onSuccess, session }: { isOpen: bool
       onClose();
     } catch (e: any) {
       console.error(e);
-      alert(`Erro ao solicitar EPI: ${e.message || 'Verifique o console para mais detalhes.'}`);
+      setErrorMsg(`Erro ao solicitar EPI: ${e.message || 'Verifique o console para mais detalhes.'}`);
     } finally {
       setLoading(false);
     }
@@ -304,6 +342,11 @@ export function EPIModal({ isOpen, onClose, onSuccess, session }: { isOpen: bool
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Nova solicitação de EPI">
       <div className="space-y-4">
+        {errorMsg && (
+          <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg border border-red-100">
+            {errorMsg}
+          </div>
+        )}
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Tipo de EPI *</label>
           <select 
@@ -361,9 +404,14 @@ export function DenunciaModal({ isOpen, onClose, onSuccess, session }: { isOpen:
   const [categoria, setCategoria] = useState('Conduta inadequada');
   const [descricao, setDescricao] = useState('');
   const [anonima, setAnonima] = useState(true);
+  const [errorMsg, setErrorMsg] = useState('');
 
   const handleSubmit = async () => {
-    if (!titulo || !descricao) return alert('Preencha o título e a descrição.');
+    setErrorMsg('');
+    if (!titulo || !descricao) {
+      setErrorMsg('Preencha o título e a descrição.');
+      return;
+    }
     
     setLoading(true);
     try {
@@ -375,27 +423,37 @@ export function DenunciaModal({ isOpen, onClose, onSuccess, session }: { isOpen:
       
       if (!profile_id) throw new Error('Usuário não autenticado');
 
-      if (profile_id.startsWith('temp-')) {
-        await new Promise(r => setTimeout(r, 600));
-        alert('Modo de demonstração: Denúncia salva localmente (sem banco de dados).');
-        onSuccess?.();
-        onClose();
+      if (profile_id.startsWith('00000000')) {
+        setTimeout(() => {
+          setTitulo('');
+          setCategoria('Conduta inadequada');
+          setDescricao('');
+          setAnonima(true);
+          onSuccess?.();
+          onClose();
+        }, 800);
         return;
       }
 
-      const autor_id = (!anonima) ? profile_id : null;
+      const autor_id = profile_id;
 
-      const { error } = await supabase.from('denuncias').insert([
-        {
-          titulo,
-          categoria,
-          descricao,
-          anonima,
-          autor_id
-        }
-      ]);
-
-      if (error) throw error;
+      const response = await fetch('/api/denuncia', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          titulo, 
+          categoria, 
+          descricao, 
+          anonima, 
+          autor_id 
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao comunicar com o servidor e salvar denúncia.');
+      }
       
       setTitulo('');
       setCategoria('Conduta inadequada');
@@ -405,7 +463,7 @@ export function DenunciaModal({ isOpen, onClose, onSuccess, session }: { isOpen:
       onClose();
     } catch (e: any) {
       console.error(e);
-      alert(`Erro ao registrar denúncia: ${e.message || 'Verifique o console para mais detalhes.'}`);
+      setErrorMsg(`Erro ao registrar denúncia: ${e.message || 'Verifique o console para mais detalhes.'}`);
     } finally {
       setLoading(false);
     }
@@ -414,6 +472,11 @@ export function DenunciaModal({ isOpen, onClose, onSuccess, session }: { isOpen:
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Canal de denúncias">
       <div className="space-y-4">
+        {errorMsg && (
+          <div className="bg-red-50 text-red-600 text-sm p-3 rounded-lg border border-red-100">
+            {errorMsg}
+          </div>
+        )}
         <p className="text-xs text-slate-500 mb-2">Relatos enviados aqui podem ser mantidos em modo sigiloso. Detalhe o ocorrido para que seja devidamente apurado.</p>
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Título *</label>
@@ -473,6 +536,77 @@ export function DenunciaModal({ isOpen, onClose, onSuccess, session }: { isOpen:
             Enviar Denúncia
           </button>
         </div>
+      </div>
+    </Modal>
+  );
+}
+
+export function RFIDModal({ isOpen, onClose, onSuccess, epiId }: { isOpen: boolean; onClose: () => void; onSuccess?: () => void, epiId: string }) {
+  const [loading, setLoading] = useState(false);
+
+  if (!isOpen) return null;
+
+  const handleSimularRetirada = async () => {
+    if (!epiId) return;
+    setLoading(true);
+    try {
+      if (epiId.startsWith('mock_') || epiId.startsWith('00000000')) {
+        setTimeout(() => {
+          onSuccess?.();
+          onClose();
+          alert('Modo demonstração: EPI retirado via RFID simulado.');
+        }, 1000);
+        return;
+      }
+
+      const res = await fetch(`/api/epis/${epiId}/retirar`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cracha: 'WOKWI-SIMULATOR' })
+      });
+      if (!res.ok) throw new Error('Falha na API de retirada');
+      
+      onSuccess?.();
+      onClose();
+    } catch(e) {
+      console.error(e);
+      alert('Erro ao simular a leitura RFID.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} title="Leitor RFID Ativo">
+      <div className="flex flex-col items-center justify-center space-y-6 py-4">
+        
+        <div className="relative">
+          <div className="w-24 h-24 rounded-full bg-blue-50 border-4 border-blue-100 flex items-center justify-center relative z-10">
+            <ScanLine size={40} className="text-blue-500 animate-pulse" />
+          </div>
+          <div className="absolute inset-0 border-[3px] border-blue-400 rounded-full animate-ping opacity-20"></div>
+        </div>
+
+        <div className="text-center">
+          <h3 className="text-lg font-bold text-[#0a1220]">Aproxime seu crachá</h3>
+          <p className="text-slate-500 text-sm mt-2 max-w-xs mx-auto">
+            A integração hardware exigirá a leitura física da sua tag NFC/RFID pelo sensor MFRC522 do almoxarifado.
+          </p>
+        </div>
+
+        <div className="w-full h-px bg-slate-100 my-4"></div>
+        
+        <div className="w-full text-center">
+          <p className="text-xs text-slate-400 mb-3">Para testar sem o Wokwi físico:</p>
+          <button 
+            disabled={loading}
+            onClick={handleSimularRetirada}
+            className="w-full border border-slate-300 hover:bg-slate-50 px-4 py-2 rounded-lg text-slate-700 font-medium text-sm flex items-center justify-center transition-colors"
+          >
+            {loading ? <Loader2 size={16} className="animate-spin" /> : 'Simular Leitura e Retirar (Bypass)'}
+          </button>
+        </div>
+
       </div>
     </Modal>
   );

@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   nome TEXT NOT NULL,
   email TEXT,
   cracha TEXT,
+  rfid_uid TEXT,
   setor TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );

@@ -29,6 +29,7 @@ export default function App() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [authView, setAuthView] = useState<'landing' | 'login' | 'signup'>('landing');
+  const [dbRole, setDbRole] = useState<string | null>(null);
 
   const [tempSession, setTempSession] = useState<{ role: 'operador' | 'chefia', id: string } | null>(null);
 
@@ -55,9 +56,13 @@ export default function App() {
         try {
           const { data, error } = await supabase
             .from('profiles')
-            .select('id')
+            .select('*')
             .eq('id', session.user.id)
             .single();
+
+          if (data && data.setor) {
+            setDbRole(data.setor.toLowerCase());
+          }
             
           if (error && error.code === 'PGRST116') {
             const emailName = session.user.email?.split('@')[0].split(/[._]/).map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' ') || 'Operador';
@@ -86,7 +91,9 @@ export default function App() {
   }, [session]);
 
   const handleTempLogin = (role: 'operador' | 'chefia') => {
-    setTempSession({ role, id: 'temp-' + role });
+    // Generate a placeholder UUID to satisfy UUID foreign keys if necessary
+    const id = role === 'chefia' ? '00000000-0000-4000-8000-000000000001' : '00000000-0000-4000-8000-000000000002';
+    setTempSession({ role, id });
   };
 
   if (loading) {
@@ -126,21 +133,21 @@ export default function App() {
       } as unknown as Session
     : session;
 
-  const isChefia = activeSessionData?.user?.email?.includes('chefia') || activeSessionData?.user?.user_metadata?.full_name?.includes('Gestor');
+  const isChefia = dbRole === 'chefia' || activeSessionData?.user?.email?.includes('chefia') || activeSessionData?.user?.user_metadata?.full_name?.includes('Gestor');
 
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard': return isChefia ? <ChefiaDashboard session={activeSessionData} setActiveTab={setActiveTab} /> : <Dashboard session={activeSessionData} setActiveTab={setActiveTab} />;
       case 'comunicados': return <Comunicados />;
       case 'rh': return <MeuRH />;
-      case 'pedidos': return <Pedidos session={activeSessionData} />;
-      case 'suporte': return <Suporte session={activeSessionData} />;
+      case 'pedidos': return <Pedidos session={activeSessionData} isChefia={isChefia} />;
+      case 'suporte': return <Suporte session={activeSessionData} isChefia={isChefia} />;
       case 'maquinas': return <Maquinas />;
       case 'mapa': return <Mapa />;
       case 'treinamentos': return <Treinamentos />;
-      case 'epi': return <EPI session={activeSessionData} />;
+      case 'epi': return <EPI session={activeSessionData} isChefia={isChefia} />;
       case 'documentos': return <Documentos />;
-      case 'denuncias': return <Denuncias session={activeSessionData} />;
+      case 'denuncias': return <Denuncias session={activeSessionData} isChefia={isChefia} />;
       case 'sobre': return <Sobre />;
       case 'perfil': return <Perfil session={activeSessionData} />;
       default: return isChefia ? <ChefiaDashboard session={activeSessionData} setActiveTab={setActiveTab} /> : <Dashboard session={activeSessionData} setActiveTab={setActiveTab} />;

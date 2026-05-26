@@ -511,7 +511,8 @@ export function Perfil({ session }: { session?: Session }) {
     nome: '',
     email: session?.user?.email || '',
     setor: 'Usinagem',
-    cracha: 'Em processamento...'
+    cracha: 'Em processamento...',
+    rfid_uid: ''
   });
 
   useEffect(() => {
@@ -550,7 +551,8 @@ export function Perfil({ session }: { session?: Session }) {
             nome: data.nome || session.user.user_metadata?.full_name || '',
             email: data.email || session.user.email || '',
             setor: data.setor || 'Usinagem',
-            cracha: data.cracha || 'Em processamento...'
+            cracha: data.cracha || 'Em processamento...',
+            rfid_uid: data.rfid_uid || ''
           });
         }
       } catch (error) {
@@ -562,7 +564,8 @@ export function Perfil({ session }: { session?: Session }) {
           nome: session.user.user_metadata?.full_name || emailName,
           email: session.user.email || '',
           setor: 'Usinagem',
-          cracha: crachaMatch ? crachaMatch[1] : String(Math.floor(10000 + Math.random() * 90000))
+          cracha: crachaMatch ? crachaMatch[1] : String(Math.floor(10000 + Math.random() * 90000)),
+          rfid_uid: ''
         });
       } finally {
         setLoading(false);
@@ -582,7 +585,8 @@ export function Perfil({ session }: { session?: Session }) {
           nome: profile.nome,
           setor: profile.setor,
           email: profile.email,
-          cracha: profile.cracha
+          cracha: profile.cracha,
+          rfid_uid: profile.rfid_uid
         });
       
       if (error) throw error;
@@ -650,6 +654,22 @@ export function Perfil({ session }: { session?: Session }) {
             <div>
               <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Número do Crachá</label>
               <div className="font-medium text-slate-500 py-2">{profile.cracha}</div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Tag RFID (Hardware)</label>
+              {isEditing ? (
+                <input 
+                  type="text" 
+                  value={profile.rfid_uid} 
+                  placeholder="Ex: 83 23 BF E2"
+                  onChange={(e) => setProfile({...profile, rfid_uid: e.target.value})}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#008AE6] focus:ring-1 focus:ring-[#008AE6]"
+                />
+              ) : (
+                <div className="font-medium text-[#0a1220] py-2">{profile.rfid_uid || 'Não configurado'}</div>
+              )}
+              <p className="text-[10px] text-slate-400 mt-1">UID físico lido pelo MFRC522 no sensor</p>
             </div>
 
             <div>

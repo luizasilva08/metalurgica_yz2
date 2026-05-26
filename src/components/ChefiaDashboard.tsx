@@ -13,17 +13,38 @@ export function ChefiaDashboard({ session, setActiveTab }: { session?: Session, 
   useEffect(() => {
     async function fetchData() {
       try {
-        // Fetch Denuncias (Reclamações/Áreas de atenção dashboard adaptation)
-        const { data: dData, error: dError } = await supabase.from('denuncias').select('*').order('created_at', { ascending: false }).limit(3);
-        if (!dError && dData) setDenuncias(dData);
+        // Fetch Denuncias via API
+        try {
+          const resDenuncias = await fetch('/api/denuncias?isChefia=true');
+          const denResult = await resDenuncias.json();
+          if (denResult.success && denResult.data) {
+            setDenuncias(denResult.data.slice(0, 3));
+          }
+        } catch(e) {
+          console.error("Error fetching denuncias", e);
+        }
 
-        // Fetch EPIs
-        const { data: epiData, error: epiError } = await supabase.from('epis').select('*, profiles(nome)').order('created_at', { ascending: false }).limit(3);
-        if (!epiError && epiData) setEpis(epiData);
+        // Fetch EPIs via API
+        try {
+          const resEpis = await fetch('/api/epis?isChefia=true');
+          const episResult = await resEpis.json();
+          if (episResult.success && episResult.data) {
+            setEpis(episResult.data.slice(0, 3));
+          }
+        } catch(e) {
+          console.error("Error fetching epis", e);
+        }
 
-        // Fetch Logs (Registro de logins simulado em tabela 'logs' ou usando base customizada)
-        const { data: logsData, error: logsError } = await supabase.from('logs').select('*').order('created_at', { ascending: false }).limit(3);
-        if (!logsError && logsData) setLogs(logsData);
+        // Fetch Logs via API
+        try {
+          const resLogs = await fetch('/api/logs?isChefia=true');
+          const logsResult = await resLogs.json();
+          if (logsResult.success && logsResult.data) {
+            setLogs(logsResult.data);
+          }
+        } catch(e) {
+          console.error("Error fetching logs", e);
+        }
 
       } catch (err) {
         console.error("Error fetching data for ChefiaDashboard", err);
@@ -151,6 +172,29 @@ export function ChefiaDashboard({ session, setActiveTab }: { session?: Session, 
                  </div>
                </div>
             </div>
+
+             {/* Denúncias Recentes */}
+             <div className="mt-6 pt-5 border-t border-slate-100">
+               <h4 className="font-medium text-[#0a1220] mb-3 flex items-center justify-between">
+                 Últimas Denúncias
+                 {denuncias.length > 0 && <span className="text-xs px-2 py-1 bg-red-100 text-red-700 rounded-full">{denuncias.length} nova(s)</span>}
+               </h4>
+               <div className="space-y-3">
+                 {denuncias.length > 0 ? denuncias.map((d, i) => (
+                   <div key={i} className="flex justify-between items-start p-3 bg-red-50/50 border border-red-100 rounded-lg">
+                     <div>
+                        <span className="text-sm font-medium text-red-900">{d.titulo}</span>
+                        <p className="text-xs text-red-600/80 mt-0.5">{d.categoria} {d.anonima ? '• Anônima' : ''}</p>
+                     </div>
+                     <span className="text-[10px] font-mono text-red-400">
+                       {new Date(d.created_at).toLocaleDateString()}
+                     </span>
+                   </div>
+                 )) : (
+                   <p className="text-sm text-slate-500 text-center py-4 border border-dashed rounded-lg">Nenhuma denúncia registrada.</p>
+                 )}
+               </div>
+             </div>
           </div>
 
           <div className="space-y-6">
@@ -190,7 +234,7 @@ export function ChefiaDashboard({ session, setActiveTab }: { session?: Session, 
                 {logs.length > 0 ? logs.map((log, i) => (
                   <div key={i} className="flex justify-between items-center py-2 border-b border-slate-50 last:border-0">
                     <div className="flex flex-col">
-                      <span className="text-sm text-[#0a1220]">{log.nome || log.usuario || 'Usuário do sistema'}</span>
+                      <span className="text-sm text-[#0a1220]">{log.profiles?.nome || log.usuario || 'Usuário do sistema'}</span>
                       <span className="text-[10px] text-slate-400">{log.acao || 'Login realizado'}</span>
                     </div>
                     <span className="text-xs font-mono text-slate-500">
