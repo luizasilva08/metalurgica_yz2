@@ -237,7 +237,7 @@ app.get("/api/epis", async (req, res) => {
       clientToUse = createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY);
     }
     
-    let query = clientToUse.from('epis').select('*, profiles:profile_id(nome)');
+    let query = clientToUse.from('epis').select('*, profiles(nome)');
     
     if (isChefia !== 'true' && userId) {
       query = query.eq('profile_id', userId);

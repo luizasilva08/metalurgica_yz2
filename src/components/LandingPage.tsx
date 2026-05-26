@@ -85,7 +85,7 @@ export function LandingPage({ onLoginClick }: LandingPageProps) {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mt-32 border-t border-white/10 pt-12 max-w-4xl">
           <div>
-            <div className="text-4xl font-bold text-[#00A3FF] mb-2">18</div>
+            <div className="text-4xl font-bold text-[#00A3FF] mb-2">100</div>
             <div className="text-[10px] tracking-widest text-[#86C8EA] font-semibold uppercase">Colaboradores</div>
           </div>
           <div>

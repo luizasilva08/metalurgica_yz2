@@ -71,29 +71,43 @@ export function ChefiaDashboard({ session, setActiveTab }: { session?: Session, 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* Lucro e Máquinas / Fábrica Global (Destaques) */}
           <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col h-[350px]">
-             <div className="p-4 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
+             <div className="p-4 border-b border-slate-100 bg-slate-50 flex items-center gap-2 shrink-0">
                <TrendingUp size={16} className="text-emerald-600" />
                <span className="font-semibold text-sm text-[#0a1220]">Lucro</span>
              </div>
-             <div className="flex-1 bg-slate-100 flex items-center justify-center p-4">
-                <div className="text-center">
+             <div className="flex-1 bg-slate-100 flex items-center justify-center overflow-hidden relative">
+                <img 
+                  src="/lucro.png" 
+                  alt="Dashboard Lucro" 
+                  className="w-full h-full object-cover absolute inset-0 z-10"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+                <div className="text-center z-0">
                   <BarChart3 size={32} className="mx-auto text-slate-300 mb-2" />
-                  <p className="text-sm text-slate-400">Espaço para iframe do Power BI</p>
-                  <p className="text-xs text-slate-400 font-mono mt-1">src="URL_LUCRO"</p>
+                  <p className="text-sm text-slate-400">Faça upload de "lucro.png"</p>
                 </div>
              </div>
           </div>
 
           <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col h-[350px]">
-             <div className="p-4 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
+             <div className="p-4 border-b border-slate-100 bg-slate-50 flex items-center gap-2 shrink-0">
                <Activity size={16} className="text-[#009DE0]" />
                <span className="font-semibold text-sm text-[#0a1220]">Status das Máquinas/Fábrica (Global)</span>
              </div>
-             <div className="flex-1 bg-slate-100 flex items-center justify-center p-4">
-                <div className="text-center">
+             <div className="flex-1 bg-slate-100 flex items-center justify-center overflow-hidden relative">
+                <img 
+                  src="/maquinas.png" 
+                  alt="Dashboard Máquinas" 
+                  className="w-full h-full object-cover absolute inset-0 z-10"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+                <div className="text-center z-0">
                   <LineChart size={32} className="mx-auto text-slate-300 mb-2" />
-                  <p className="text-sm text-slate-400">Espaço para iframe do Power BI</p>
-                  <p className="text-xs text-slate-400 font-mono mt-1">src="URL_STATUS_MAQUINAS"</p>
+                  <p className="text-sm text-slate-400">Faça upload de "maquinas.png"</p>
                 </div>
              </div>
           </div>
@@ -102,29 +116,45 @@ export function ChefiaDashboard({ session, setActiveTab }: { session?: Session, 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Desperdício e Energia, Matéria Prima */}
           <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col h-[280px]">
-             <div className="p-4 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
+             <div className="p-4 border-b border-slate-100 bg-slate-50 flex items-center gap-2 shrink-0">
                <div className="flex -space-x-1">
                  <Droplets size={16} className="text-amber-500" />
                  <Zap size={16} className="text-yellow-500" />
                </div>
                <span className="font-semibold text-sm text-[#0a1220]">Desperdício e Consumo Energético</span>
              </div>
-             <div className="flex-1 bg-slate-100 flex items-center justify-center p-4">
-                <div className="text-center">
+             <div className="flex-1 bg-slate-100 flex items-center justify-center overflow-hidden relative">
+                <img 
+                  src="/energia.png" 
+                  alt="Dashboard Energia" 
+                  className="w-full h-full object-cover absolute inset-0 z-10"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+                <div className="text-center z-0">
                   <PieChart size={24} className="mx-auto text-slate-300 mb-2" />
-                  <p className="text-xs text-slate-400">Iframe Power BI</p>
+                  <p className="text-xs text-slate-400">Faça upload de "energia.png"</p>
                 </div>
              </div>
           </div>
           <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col h-[280px]">
-             <div className="p-4 border-b border-slate-100 bg-slate-50 flex items-center gap-2">
+             <div className="p-4 border-b border-slate-100 bg-slate-50 flex items-center gap-2 shrink-0">
                <Package size={16} className="text-indigo-500" />
-               <span className="font-semibold text-sm text-[#0a1220]">Matéria-Prima</span>
+               <span className="font-semibold text-sm text-[#0a1220]">Matéria-Prima e Perdas</span>
              </div>
-             <div className="flex-1 bg-slate-100 flex items-center justify-center p-4">
-                <div className="text-center">
+             <div className="flex-1 bg-slate-100 flex items-center justify-center overflow-hidden relative">
+                <img 
+                  src="/desperdicio.png" 
+                  alt="Dashboard Matéria-Prima" 
+                  className="w-full h-full object-cover absolute inset-0 z-10"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+                <div className="text-center z-0">
                   <BarChart3 size={24} className="mx-auto text-slate-300 mb-2" />
-                  <p className="text-xs text-slate-400">Iframe Power BI</p>
+                  <p className="text-xs text-slate-400">Faça upload de "desperdicio.png"</p>
                 </div>
              </div>
           </div>

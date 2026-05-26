@@ -61,7 +61,7 @@ export function Dashboard({ session, setActiveTab }: { session?: Session, setAct
         {[
           { icon: Package, value: stats.pedidos.toString(), label: 'Meus pedidos', color: 'text-blue-500', bg: 'bg-blue-50', tab: 'pedidos' },
           { icon: LifeBuoy, value: stats.chamados.toString(), label: 'Chamados em aberto', color: 'text-sky-500', bg: 'bg-sky-50', tab: 'suporte' },
-          { icon: HardHat, value: stats.epis.toString(), label: 'EPIs pendentes', color: 'text-amber-500', bg: 'bg-amber-50', tab: 'epi' },
+          { icon: HardHat, value: stats.epis.toString(), label: 'EPIs pedidos', color: 'text-amber-500', bg: 'bg-amber-50', tab: 'epi' },
           { icon: Activity, value: stats.maquinas.toString(), label: 'Máquinas em atenção', color: 'text-red-500', bg: 'bg-red-50', tab: 'maquinas' },
         ].map((stat, i) => (
           <div 
@@ -388,18 +388,15 @@ export function EPI({ session, isChefia }: { session?: Session; isChefia?: boole
 
   const fetchEpis = async () => {
     try {
-      let query = supabase
-        .from('epis')
-        .select('*');
-        
-      if (!isChefia && session?.user?.id) {
-        query = query.eq('profile_id', session.user.id);
-      }
+      const response = await fetch(`/api/epis?isChefia=${isChefia}&userId=${session?.user?.id || ''}`);
+      const result = await response.json();
       
-      const { data, error } = await query.order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setEpis(data || []);
+      if (result.success && result.data) {
+        setEpis(result.data);
+      } else {
+        console.error('Failed to fetch epis from API:', result.error);
+        setEpis([]);
+      }
     } catch (error) {
       console.error('Error fetching epis:', error);
     } finally {

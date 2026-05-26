@@ -14,7 +14,7 @@ export function Treinamentos() {
       perguntas: 3,
       conteudo: [
         'A Metalúrgica YZ foi fundada em 1995 em Caxias do Sul (RS) por dois irmãos torneiros mecânicos.',
-        'Hoje somos 18 colaboradores, com foco em usinagem de precisão e estruturas soldadas para o setor agrícola.',
+        'Hoje somos 100 colaboradores, com foco em usinagem de precisão e estruturas soldadas para o setor agrícola.',
         'Nossos valores: segurança em primeiro lugar, qualidade no que entregamos e respeito ao colega de chão de fábrica.',
         'Horário padrão: turno 1 das 07h às 16h48 com 1h de almoço. Tolerância de 5 minutos.'
       ],
