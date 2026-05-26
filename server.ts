@@ -8,18 +8,18 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
 
 // Equivalent to Flask: supabase client on the backend
-const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || '';
+const supabaseUrl = process.env.VITE_SUPABASE_URL || 'https://placeholder-url.supabase.co';
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || 'placeholder-key';
 // supabase admin key bypasses all limits. Set this up in your .env if needed
-const supabaseAdminKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY; 
+const supabaseAdminKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || 'placeholder-key'; 
 
-const supabase = createClient(supabaseUrl, supabaseAdminKey || '');
+const supabase = createClient(supabaseUrl, supabaseAdminKey);
 
 // @app.route('/api/status', methods=['GET'])
 app.get("/api/status", (req, res) => {
